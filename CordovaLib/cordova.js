@@ -8,9 +8,9 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
      http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -934,10 +934,18 @@ function iOSExec() {
         pokeNative();
     }
 }
+// CB-10530
+function proxyChanged() {
+    var cexec = cordovaExec();
+
+    return (execProxy !== cexec && // proxy objects are different
+            iOSExec !== cexec      // proxy object is not the current iOSExec
+            );
+}
 
 // CB-10106
 function handleBridgeChange() {
-    if (execProxy !== cordovaExec()) {
+    if (proxyChanged()) {
         var commandString = commandQueue.shift();
         while(commandString) {
             var command = JSON.parse(commandString);
@@ -946,14 +954,14 @@ function handleBridgeChange() {
             var action = command[2];
             var actionArgs = command[3];
             var callbacks = cordova.callbacks[callbackId] || {};
-            
+
             execProxy(callbacks.success, callbacks.fail, service, action, actionArgs);
-            
+
             commandString = commandQueue.shift();
         };
         return true;
     }
-    
+
     return false;
 }
 
@@ -963,7 +971,7 @@ function pokeNative() {
         setTimeout(pokeNative);
         return;
     }
-    
+
     // Check if they've removed it from the DOM, and put it back if so.
     if (execIframe && execIframe.contentWindow) {
         execIframe.contentWindow.location = 'gap://ready';
